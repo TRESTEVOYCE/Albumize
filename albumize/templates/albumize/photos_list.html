@@ -1,0 +1,297 @@
+{% extends 'albumize/base.html' %}
+{% load static %}
+
+{% block title %}Photos - Albumize{% endblock %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-12 pb-24 relative min-h-[calc(100vh-10rem)]">
+    
+    <!-- Header Section -->
+    <div class="mb-12 text-center sm:text-left flex flex-col sm:flex-row sm:items-end sm:justify-between gap-6">
+        <div>
+            <h1 class="text-3xl font-extrabold tracking-tight bg-gradient-to-r from-slate-100 via-indigo-200 to-cyan-400 bg-clip-text text-transparent">
+                Photo Gallery
+            </h1>
+            <p class="mt-2 text-sm text-slate-400 max-w-md">
+                Browse through your captured moments, preserved cleanly in high resolution.
+            </p>
+        </div>
+        
+        <!-- Interactive Actions Alignment Panel -->
+        <div class="flex flex-col sm:flex-row items-center gap-4 self-center sm:self-auto">
+            <!-- Quick Stats Badge -->
+            <div class="px-4 py-2 rounded-xl bg-slate-900/60 border border-slate-800/80 text-xs text-slate-400 shadow-inner">
+                Showing <span class="text-indigo-400 font-semibold">{{ page_obj.start_index|default:0 }}</span> - <span class="text-indigo-400 font-semibold">{{ page_obj.end_index|default:0 }}</span> of <span class="text-slate-300 font-semibold">{{ paginator.count|default:0 }}</span> Photos
+            </div>
+
+            <!-- Premium Add Photo Navigation Call-to-Action (Triggers Modal Upload) -->
+            <button type="button" onclick="openUploadModal()" 
+               class="inline-flex items-center space-x-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-500 active:scale-[0.98] text-xs font-semibold text-white rounded-xl shadow-lg shadow-indigo-600/15 border border-indigo-400/20 transition duration-150 cursor-pointer">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
+                </svg>
+                <span>Upload Photo</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- Gallery Grid -->
+    {% if photos %}
+    <div class="columns-1 sm:columns-2 md:columns-3 lg:columns-4 gap-4 space-y-4 [column-fill:_balance] box-border">
+        {% for photo in photos %}
+        <div class="break-inside-avoid bg-slate-900/40 border border-slate-800/60 rounded-2xl overflow-hidden group hover:border-indigo-500/40 transition-all duration-300 hover:shadow-[0_0_30px_rgba(99,102,241,0.08)] backdrop-blur-sm relative flex flex-col">
+            
+            <!-- Image Wrapper -->
+            <div class="overflow-hidden bg-slate-950 aspect-auto relative">
+                {% if photo.image %}
+                <img id="photo-img-{{ photo.id }}" src="{{ photo.image.url }}" 
+                     alt="{{ photo.caption|default:'Album Photo' }}" 
+                     class="w-full h-auto object-cover transform scale-100 group-hover:scale-[1.03] transition-transform duration-500 ease-out" loading="lazy">
+                {% else %}
+                <div class="w-full h-48 bg-slate-900 flex items-center justify-center text-slate-600">
+                    <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+                </div>
+                {% endif %}
+
+                <!-- Action Button Overlay (Reveals smoothly on Hover) -->
+                <div class="absolute inset-0 bg-slate-950/40 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center p-4">
+                    <button type="button" 
+                            onclick="openEditModal('{{ photo.id }}', '{{ photo.caption|escapejs }}', '{{ photo.album.id|default:'' }}')"
+                            class="px-4 py-2 bg-indigo-600/90 hover:bg-indigo-500 backdrop-blur text-xs font-semibold text-white rounded-xl shadow-lg border border-indigo-400/30 transform translate-y-2 group-hover:translate-y-0 transition-all duration-300 active:scale-95 cursor-pointer">
+                        Add to Album
+                    </button>
+                </div>
+            </div>
+
+            <!-- Context Info Footer -->
+            <div class="p-4 flex-grow flex flex-col justify-between border-t border-slate-950">
+                {% if photo.caption %}
+                <p class="text-sm font-medium text-slate-200 line-clamp-2 leading-relaxed mb-2">
+                    {{ photo.caption }}
+                </p>
+                {% else %}
+                <p class="text-sm italic text-slate-500 mb-2">Untitled Memory</p>
+                {% endif %}
+                
+                <div class="flex items-center justify-between text-[11px] text-slate-500 pt-2 border-t border-slate-800/30">
+                    <span class="truncate max-w-[120px] font-medium text-slate-400">
+                        📁 {{ photo.album.title|default:"Unassigned" }}
+                    </span>
+                    <span>
+                        {{ photo.uploaded_at|date:"M d, Y" }}
+                    </span>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+    <!-- Glassmorphic Pagination System -->
+    {% if is_paginated %}
+    <div class="mt-16 flex justify-center">
+        <nav class="inline-flex items-center gap-1 bg-slate-900/60 border border-slate-800/80 p-1.5 rounded-2xl backdrop-blur-xl shadow-xl" aria-label="Pagination">
+            {% if page_obj.has_previous %}
+            <a href="?page={{ page_obj.previous_page_number }}" class="inline-flex items-center justify-center w-10 h-10 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800/60 border border-transparent hover:border-slate-700/50 transition-all duration-200">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path></svg>
+            </a>
+            {% endif %}
+
+            {% for num in paginator.page_range %}
+                {% if page_obj.number == num %}
+                <span class="inline-flex items-center justify-center w-10 h-10 rounded-xl bg-gradient-to-r from-indigo-600 to-indigo-500 text-white text-sm font-semibold border border-indigo-400/20 shadow-md shadow-indigo-600/20">
+                    {{ num }}
+                </span>
+                {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+                <a href="?page={{ num }}" class="inline-flex items-center justify-center w-10 h-10 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800/40 text-sm font-medium transition">
+                    {{ num }}
+                </a>
+                {% endif %}
+            {% endfor %}
+
+            {% if page_obj.has_next %}
+            <a href="?page={{ page_obj.next_page_number }}" class="inline-flex items-center justify-center w-10 h-10 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800/60 border border-transparent hover:border-slate-700/50 transition-all duration-200">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
+            </a>
+            {% endif %}
+        </nav>
+    </div>
+    {% endif %}
+
+    {% else %}
+    <!-- Empty State Prompt -->
+    <div class="py-20 text-center border border-dashed border-slate-800 rounded-3xl bg-slate-900/10 backdrop-blur-sm max-w-sm mx-auto mt-12 px-6">
+        <div class="w-12 h-12 rounded-xl bg-slate-900 border border-slate-800 text-slate-500 flex items-center justify-center mx-auto mb-4">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+        </div>
+        <h3 class="text-base font-semibold text-slate-200">No photos found</h3>
+        <p class="text-xs text-slate-500 mt-1 mb-6">Your storage vault is empty. Get started by uploading your first image.</p>
+        <button type="button" onclick="openUploadModal()" class="inline-flex py-2 px-4 bg-indigo-600 hover:bg-indigo-500 text-xs font-semibold text-white rounded-xl transition shadow-lg shadow-indigo-600/10 cursor-pointer">
+            Upload Image
+        </button>
+    </div>
+    {% endif %}
+</div>
+
+<!-- ========================================================== -->
+<!-- FROSTED GLASS DYNAMIC MODAL (HANDLES UPLOAD & EDIT) -->
+<!-- ========================================================== -->
+<div id="albumModal" class="hidden fixed inset-0 z-[100] flex items-center justify-center p-4 backdrop-blur-md bg-slate-950/60 opacity-0 transition-opacity duration-300">
+    
+    <!-- Modal Card Wrapper -->
+    <div id="albumModalCard" class="w-full max-w-md bg-slate-900/90 border border-slate-800/80 rounded-2xl p-6 shadow-2xl transform scale-95 transition-transform duration-300 relative overflow-hidden backdrop-blur-xl">
+        
+        <div class="absolute -top-12 -right-12 w-32 h-32 bg-indigo-500/10 rounded-full blur-2xl pointer-events-none"></div>
+
+        <!-- Modal Title -->
+        <div class="flex items-center justify-between mb-5 border-b border-slate-800/60 pb-3">
+            <h3 id="modalTitle" class="text-lg font-bold text-slate-100 tracking-tight">Upload New Photo</h3>
+            <button type="button" onclick="closeAlbumModal()" class="text-slate-400 hover:text-white rounded-lg p-1 hover:bg-slate-800/50 transition">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+            </button>
+        </div>
+
+        <form id="albumAssignmentForm" method="POST" action="" enctype="multipart/form-data">
+            {% csrf_token %}
+            
+            <!-- Quick Image Preview Context Block (Only visible on Edit mode) -->
+            <div id="modalPreviewBlock" class="hidden flex items-center gap-4 bg-slate-950/50 border border-slate-800/40 rounded-xl p-3 mb-5">
+                <div class="w-16 h-16 rounded-lg bg-slate-900 overflow-hidden flex-shrink-0 border border-slate-800">
+                    <img id="modalPhotoPreview" src="" alt="Preview" class="w-full h-full object-cover">
+                </div>
+                <div class="overflow-hidden">
+                    <p class="text-xs font-semibold text-slate-400 tracking-wider uppercase">Selected Image</p>
+                    <p id="modalPhotoCaption" class="text-sm font-medium text-slate-200 truncate mt-0.5">Untitled Photo</p>
+                </div>
+            </div>
+            
+            <!-- File Selector Input Element (Only visible on Upload mode) -->
+            <div id="modalFileBlock" class="mb-4">
+                <label for="id_image" class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">Select Image</label>
+                <input type="file" id="id_image" name="image" 
+                       class="w-full bg-slate-950/50 border border-slate-800/60 rounded-xl p-2.5 text-sm text-slate-300 file:mr-4 file:py-1.5 file:px-3 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-indigo-600 file:text-white hover:file:bg-indigo-500 file:transition cursor-pointer">
+            </div>
+
+            <!-- Custom Content Caption Text Input Field -->
+            <div id="modalCaptionBlock" class="mb-4">
+                <label for="id_caption" class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">Caption</label>
+                <input type="text" id="id_caption" name="caption" placeholder="Give your memory a title..." 
+                       class="w-full bg-slate-950/50 border border-slate-800/60 rounded-xl p-3 text-sm text-slate-200 focus:outline-none focus:border-indigo-500 transition">
+            </div>
+
+            <!-- Target Selection Field Dropdown -->
+            <div class="mb-6">
+                <label for="albumSelect" class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">Choose Album</label>
+                <select id="albumSelect" name="album_id" class="w-full bg-slate-950/50 border border-slate-800/60 rounded-xl p-3 text-sm text-slate-200 focus:outline-none focus:border-indigo-500 transition cursor-pointer">
+                    <option value="" selected>Unassigned / Leave Unassigned</option>
+                    {% for album in user_albums %}
+                    <option value="{{ album.id }}">{{ album.title }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <!-- Form Action Buttons -->
+            <div class="flex items-center justify-end gap-3 border-t border-slate-800/60 pt-4">
+                <button type="button" onclick="closeAlbumModal()" class="px-4 py-2.5 bg-slate-950 hover:bg-slate-900 text-xs font-semibold text-slate-400 hover:text-slate-200 border border-slate-800 rounded-xl transition cursor-pointer">
+                    Cancel
+                </button>
+                <button type="submit" id="modalSubmitBtn" class="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-500 active:scale-[0.98] text-xs font-semibold text-white rounded-xl transition shadow-lg shadow-indigo-600/10 cursor-pointer">
+                    Save Changes
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Dynamic Modal Management Logic Scripts -->
+<script>
+    const modal = document.getElementById('albumModal');
+    const modalFormCard = document.getElementById('albumModalCard');
+    const modalForm = document.getElementById('albumAssignmentForm');
+    const modalTitle = document.getElementById('modalTitle');
+    const modalSubmitBtn = document.getElementById('modalSubmitBtn');
+    
+    // Form toggle element components
+    const previewBlock = document.getElementById('modalPreviewBlock');
+    const fileBlock = document.getElementById('modalFileBlock');
+    const captionBlock = document.getElementById('modalCaptionBlock');
+    const modalPreview = document.getElementById('modalPhotoPreview');
+    const modalCaption = document.getElementById('modalPhotoCaption');
+    const albumSelect = document.getElementById('albumSelect');
+    const fileInput = document.getElementById('id_image');
+
+    // 1. SCENARIO A: Open modal to upload a BRAND NEW photo
+    function openUploadModal() {
+        modalForm.reset();
+        modalForm.action = "{% url 'photo_create' %}"; // Points to photo creation URL route
+        
+        modalTitle.innerText = "Upload New Photo";
+        modalSubmitBtn.innerText = "Upload & Save";
+        
+        previewBlock.classList.add('hidden');
+        fileBlock.classList.remove('hidden');
+        captionBlock.classList.remove('hidden');
+        fileInput.setAttribute('required', 'required');
+
+        showModalSystem();
+    }
+
+    // 2. SCENARIO B: Open modal to edit an EXISTING photo's album
+    function openEditModal(photoId, captionText, currentAlbumId) {
+        modalForm.reset();
+        
+        // HIGHLIGHT: Generate dynamic URL safely without breaking template compiling
+        let baseUrl = "{% url 'photo_album_update' pk=0 %}";
+        modalForm.action = baseUrl.replace('0', photoId);
+
+        modalTitle.innerText = "Add Photo to Album";
+        modalSubmitBtn.innerText = "Update Album";
+        
+        // Handle visual text previews
+        const targetImg = document.getElementById(`photo-img-${photoId}`);
+        if(targetImg) modalPreview.src = targetImg.src;
+        modalCaption.innerText = captionText.trim() ? captionText : "Untitled Memory";
+        
+        // Auto-select the photo's current album in dropdown selector
+        albumSelect.value = currentAlbumId;
+
+        previewBlock.classList.remove('hidden');
+        fileBlock.classList.add('hidden');
+        captionBlock.classList.add('hidden'); // Hiding file descriptors so modal only alters album association
+        fileInput.removeAttribute('required');
+
+        showModalSystem();
+    }
+
+    function showModalSystem() {
+        modal.classList.remove('hidden');
+        setTimeout(() => {
+            modal.classList.remove('opacity-0');
+            modalFormCard.classList.remove('scale-95');
+            modal.classList.add('opacity-100');
+            modalFormCard.classList.add('scale-100');
+        }, 20);
+    }
+
+    function closeAlbumModal() {
+        modal.classList.remove('opacity-100');
+        modalFormCard.classList.remove('scale-100');
+        modal.classList.add('opacity-0');
+        modalFormCard.classList.add('scale-95');
+        
+        setTimeout(() => {
+            modal.classList.add('hidden');
+            modalForm.reset(); 
+        }, 300);
+    }
+
+    modal.addEventListener('click', (e) => {
+        if (e.target === modal) closeAlbumModal();
+    });
+
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && !modal.classList.contains('hidden')) {
+            closeAlbumModal();
+        }
+    });
+</script>
+{% endblock %}

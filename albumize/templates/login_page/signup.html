@@ -1,0 +1,152 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Create Account | Albumize{% endblock %}</title>
+
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-slate-950 text-slate-100 font-sans antialiased min-h-screen flex flex-col justify-between selection:bg-indigo-500 selection:text-white">
+    
+    <header class="w-full bg-slate-950/50 backdrop-blur-md border-b border-slate-900/50 fixed top-0 left-0 z-50">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 h-16 flex items-center">
+            <a href="/" class="text-xl font-bold bg-gradient-to-r from-indigo-400 to-cyan-400 bg-clip-text text-transparent tracking-tight">
+                Albumize
+            </a>
+        </div>
+    </header>
+
+    <main class="flex-grow flex items-center justify-center relative overflow-hidden px-4 py-24">
+        
+        <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] bg-indigo-500/10 rounded-full blur-[120px] pointer-events-none"></div>
+
+        <div class="w-full max-w-md bg-slate-900/40 border border-slate-900 backdrop-blur-xl p-8 sm:p-10 rounded-2xl shadow-2xl z-10 relative">
+            
+            <div class="text-center mb-8">
+                <h1 class="text-2xl sm:text-3xl font-bold tracking-tight text-white mb-2">Get Started</h1>
+                <p class="text-sm text-slate-400">Create an account to preserve and arrange your collection.</p>
+            </div>
+
+            <form method="POST" action="{% url 'signup' %}" class="space-y-5" novalidate>
+                {% csrf_token %}
+
+                {% if form.non_field_errors %}
+                    <div class="p-4 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-400 text-xs font-medium space-y-1.5 shadow-lg shadow-rose-500/5 animate-fade-in">
+                        <div class="flex items-center space-x-2 mb-1">
+                            <svg class="h-4 w-4 text-rose-400 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="m11.25 11.25.041-.02a.75.75 0 1 1 1.063 1.06l-.041.02a.75.75 0 0 1-1.062-1.06Zm0 6.25.041-.02a.75.75 0 1 1 1.063 1.06l-.041.02a.75.75 0 0 1-1.062-1.06ZM12 16.5c0-1-.177-1.954-.5-2.83M12 4.5c4.756 0 8.773 3.16 10.03 7.5A10.024 10.024 0 0 1 12 21.75c-4.756 0-8.773-3.16-10.03-7.5A10.024 10.024 0 0 1 12 4.5Z" />
+                            </svg>
+                            <span class="font-semibold tracking-wide uppercase text-[10px]">Registration Interrupted</span>
+                        </div>
+                        {% for error in form.non_field_errors %}
+                            <p class="leading-relaxed">{{ error }}</p>
+                        {% endfor %}
+                    </div>
+                {% endif %}
+
+                <div class="space-y-1.5">
+                    <label for="{{ form.username.id_for_label }}" class="flex justify-between text-xs font-semibold uppercase tracking-wider {% if form.username.errors %}text-rose-400{% else %}text-slate-400{% endif %}">
+                        <span>Username</span>
+                    </label>
+                    <input type="text" 
+                           name="{{ form.username.html_name }}" 
+                           id="{{ form.username.id_for_label }}"
+                           value="{{ form.username.value|default:'' }}"
+                           maxlength="150"
+                           required
+                           class="w-full px-4 py-2.5 bg-slate-950 border rounded-xl text-sm text-slate-100 placeholder-slate-600 focus:outline-none focus:ring-2 transition duration-200 {% if form.username.errors %}border-rose-500/50 focus:border-rose-500 focus:ring-rose-500/10{% else %}border-slate-800 focus:border-indigo-500 focus:ring-indigo-500/20{% endif %}" 
+                           placeholder="Choose a username">
+                    
+                    {% if form.username.errors %}
+                        <div class="space-y-0.5 mt-1 text-xs text-rose-400 font-medium">
+                            {% for error in form.username.errors %}
+                                <p class="flex items-center gap-1"><span class="text-rose-500/70">•</span> {{ error }}</p>
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                </div>
+
+                <div class="space-y-1.5">
+                    <label for="{{ form.email.id_for_label }}" class="flex justify-between text-xs font-semibold uppercase tracking-wider {% if form.email.errors %}text-rose-400{% else %}text-slate-400{% endif %}">
+                        <span>Email Address</span>
+                    </label>
+                    <input type="email" 
+                           name="{{ form.email.html_name }}" 
+                           id="{{ form.email.id_for_label }}"
+                           value="{{ form.email.value|default:'' }}"
+                           required
+                           class="w-full px-4 py-2.5 bg-slate-950 border rounded-xl text-sm text-slate-100 placeholder-slate-600 focus:outline-none focus:ring-2 transition duration-200 {% if form.email.errors %}border-rose-500/50 focus:border-rose-500 focus:ring-rose-500/10{% else %}border-slate-800 focus:border-indigo-500 focus:ring-indigo-500/20{% endif %}" 
+                           placeholder="you@example.com">
+                    
+                    {% if form.email.errors %}
+                        <div class="space-y-0.5 mt-1 text-xs text-rose-400 font-medium">
+                            {% for error in form.email.errors %}
+                                <p class="flex items-center gap-1"><span class="text-rose-500/70">•</span> {{ error }}</p>
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                </div>
+
+                <div class="space-y-1.5">
+                    <label for="{{ form.password1.id_for_label }}" class="flex justify-between text-xs font-semibold uppercase tracking-wider {% if form.password1.errors %}text-rose-400{% else %}text-slate-400{% endif %}">
+                        <span>Password</span>
+                    </label>
+                    <input type="password" 
+                           name="{{ form.password1.html_name }}" 
+                           id="{{ form.password1.id_for_label }}"
+                           required
+                           class="w-full px-4 py-2.5 bg-slate-950 border rounded-xl text-sm text-slate-100 placeholder-slate-600 focus:outline-none focus:ring-2 transition duration-200 {% if form.password1.errors %}border-rose-500/50 focus:border-rose-500 focus:ring-rose-500/10{% else %}border-slate-800 focus:border-indigo-500 focus:ring-indigo-500/20{% endif %}" 
+                           placeholder="••••••••">
+                    
+                    {% if form.password1.errors %}
+                        <div class="space-y-0.5 mt-1 text-xs text-rose-400 font-medium leading-relaxed">
+                            {% for error in form.password1.errors %}
+                                <p class="flex items-start gap-1"><span class="text-rose-500/70 mt-0.5">•</span> <span>{{ error }}</span></p>
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                </div>
+
+                <div class="space-y-1.5">
+                    <label for="{{ form.password2.id_for_label }}" class="flex justify-between text-xs font-semibold uppercase tracking-wider {% if form.password2.errors %}text-rose-400{% else %}text-slate-400{% endif %}">
+                        <span>Confirm Password</span>
+                    </label>
+                    <input type="password" 
+                           name="{{ form.password2.html_name }}" 
+                           id="{{ form.password2.id_for_label }}"
+                           required
+                           class="w-full px-4 py-2.5 bg-slate-950 border rounded-xl text-sm text-slate-100 placeholder-slate-600 focus:outline-none focus:ring-2 transition duration-200 {% if form.password2.errors %}border-rose-500/50 focus:border-rose-500 focus:ring-rose-500/10{% else %}border-slate-800 focus:border-indigo-500 focus:ring-indigo-500/20{% endif %}" 
+                           placeholder="••••••••">
+                    
+                    {% if form.password2.errors %}
+                        <div class="space-y-0.5 mt-1 text-xs text-rose-400 font-medium">
+                            {% for error in form.password2.errors %}
+                                <p class="flex items-center gap-1"><span class="text-rose-500/70">•</span> {{ error }}</p>
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                </div>
+
+                <button type="submit" class="w-full mt-2 py-3 px-4 bg-indigo-600 hover:bg-indigo-500 active:bg-indigo-700 text-white font-semibold rounded-xl text-sm transition duration-200 shadow-xl shadow-indigo-600/10 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 focus:ring-offset-slate-950">
+                    Create Account
+                </button>
+            </form>
+
+            <div class="mt-8 pt-6 border-t border-slate-900 text-center">
+                <p class="text-xs text-slate-500">
+                    Already have an account? 
+                    <a href="{% url 'login' %}" class="text-indigo-400 hover:text-indigo-300 font-medium ml-1 transition">Sign in</a>
+                </p>
+            </div>
+
+        </div>
+    </main>
+
+    <footer class="w-full py-6 text-center text-xs text-slate-700 border-t border-slate-900/40">
+        <p>&copy; {% now "Y" %} Albumize. All rights reserved.</p>
+    </footer>
+
+</body>
+</html>

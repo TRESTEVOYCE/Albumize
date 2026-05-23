@@ -1,0 +1,232 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Albumize{% endblock %}</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Custom transitions for elements Tailwind can't smoothly animate natively via classes alone */
+        .menu-transition {
+            transition: opacity 0.2s cubic-bezier(0.4, 0, 0.2, 1), transform 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .drawer-transition {
+            transition: max-height 0.3s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.2s ease;
+        }
+    </style>
+</head>
+<body class="bg-slate-950 text-slate-100 font-sans antialiased min-h-screen flex flex-col justify-between selection:bg-indigo-500 selection:text-white relative">
+
+    <!-- Ambient Background Glows -->
+    <div class="absolute top-0 left-1/4 w-[500px] h-[500px] bg-indigo-500/5 rounded-full blur-[140px] pointer-events-none z-0"></div>
+    <div class="absolute bottom-1/4 right-1/4 w-[400px] h-[400px] bg-cyan-500/5 rounded-full blur-[120px] pointer-events-none z-0"></div>
+
+    <!-- Sticky Navbar with Dynamic Glassmorphism -->
+    <header id="mainHeader" class="w-full bg-slate-950/0 border-b border-transparent fixed top-0 left-0 z-50 transition-all duration-300">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex items-center justify-between h-16">
+                
+                <!-- Brand Identity -->
+                <div class="flex-shrink-0">
+                    <a href="{% url 'home' %}" class="text-xl font-bold bg-gradient-to-r from-indigo-400 to-cyan-400 bg-clip-text text-transparent tracking-tight hover:opacity-90 transition">
+                        Albumize
+                    </a>
+                </div>
+
+                <!-- Desktop Navigation Menu -->
+                <nav class="hidden md:flex items-center space-x-1 relative">
+                    <!-- Albums Nav Link -->
+                    <a href="{% url 'album_list' %}" 
+                       class="nav-link px-3 py-2 rounded-lg text-sm font-medium transition duration-200 
+                       {% if request.resolver_match.url_name != 'photos_list' %}text-slate-100 bg-slate-900/60 border border-slate-800/50 shadow-inner{% else %}text-slate-400 hover:text-slate-200 hover:bg-slate-900/40 border border-transparent{% endif %}">
+                        Albums
+                    </a>
+                    
+                    <!-- Photos Nav Link -->
+                    <a href="{% url 'photos_list' %}" 
+                       class="nav-link px-3 py-2 rounded-lg text-sm font-medium transition duration-200 
+                       {% if request.resolver_match.url_name == 'photos_list' %}text-slate-100 bg-slate-900/60 border border-slate-800/50 shadow-inner{% else %}text-slate-400 hover:text-slate-200 hover:bg-slate-900/40 border border-transparent{% endif %}">
+                        Photos
+                    </a>
+                </nav>
+
+                <!-- Right Action Panel -->
+                <div class="hidden md:flex items-center space-x-4">
+                    {% if user.is_authenticated %}
+                        <!-- Authenticated Dropdown Menu Wrapper -->
+                        <div class="relative id-dropdown-container">
+                            <button id="profileDropdownBtn" class="flex items-center space-x-2.5 px-3 py-1.5 rounded-xl border border-slate-900 bg-slate-900/30 hover:bg-slate-900/60 transition group focus:outline-none">
+                                <div class="w-7 h-7 rounded-full bg-gradient-to-br from-indigo-500 to-cyan-500 flex items-center justify-center text-xs font-bold text-white shadow-md shadow-indigo-500/10">
+                                    {{ user.username|slice:":1"|upper }}
+                                </div>
+                                <span class="text-sm font-medium text-slate-300 group-hover:text-slate-100 transition">{{ user.username }}</span>
+                                <svg class="w-4 h-4 text-slate-500 group-hover:text-slate-400 transition transform duration-300" id="dropdownArrow" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                            </button>
+
+                            <!-- Animated Dropdown Card Menu -->
+                            <div id="profileDropdownMenu" class="hidden opacity-0 scale-95 menu-transition absolute right-0 mt-2 w-48 bg-slate-900/95 border border-slate-800/80 backdrop-blur-xl rounded-xl shadow-2xl p-1.5 z-50 transform origin-top-right">
+                                <a href="#" class="block px-3 py-2 text-sm text-slate-400 hover:text-slate-200 hover:bg-slate-800/50 rounded-lg transition">Account Settings</a>
+                                <div class="h-px bg-slate-800/60 my-1"></div>
+                                <form method="POST" action="{% url 'logout' %}" class="w-full">
+                                    {% csrf_token %}
+                                    <button type="submit" class="w-full text-left block px-3 py-2 text-sm text-rose-400 hover:text-rose-300 hover:bg-rose-500/10 rounded-lg font-medium transition">
+                                        Sign Out
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
+                    {% else %}
+                        <a href="{% url 'login' %}" class="text-sm font-medium text-slate-400 hover:text-white transition duration-200">Sign In</a>
+                        <a href="{% url 'signup' %}" class="py-2 px-4 bg-indigo-600 hover:bg-indigo-500 active:scale-[0.98] text-white text-sm font-semibold rounded-xl transition duration-200 shadow-lg shadow-indigo-600/10">
+                            Get Started
+                        </a>
+                    {% endif %}
+                </div>
+
+                <!-- Mobile Hamburger Button -->
+                <div class="flex items-center md:hidden">
+                    <button id="mobileMenuBtn" class="p-2 rounded-xl text-slate-400 hover:text-white hover:bg-slate-900 focus:outline-none transition group" aria-label="Toggle Menu">
+                        <svg class="w-6 h-6 transition transform duration-300 group-active:scale-90" id="hamburgerIcon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path id="navLines" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
+                        </svg>
+                    </button>
+                </div>
+
+            </div>
+        </div>
+
+        <!-- Smooth Sliding Mobile Drawer -->
+        <div id="mobileMenu" class="max-h-0 opacity-0 overflow-hidden drawer-transition md:hidden bg-slate-950/98 border-b border-slate-900/80 backdrop-blur-xl px-4 space-y-3">
+            <div class="space-y-1.5 px-2 pt-2">
+                <a href="{% url 'home' %}" class="block px-3 py-2.5 rounded-xl text-base font-medium text-slate-400 hover:text-white hover:bg-slate-900/40">Home</a>
+                
+                <!-- Mobile Albums Link -->
+                <a href="#" 
+                   class="block px-3 py-2.5 rounded-xl text-base font-medium transition border
+                   {% if request.resolver_match.url_name != 'photos_list' %}text-white bg-slate-900/80 border-slate-800/40{% else %}text-slate-400 hover:text-white hover:bg-slate-900/40 border-transparent{% endif %}">
+                    My Albums
+                </a>
+                
+                <!-- Mobile Photos Link -->
+                <a href="{% url 'photos_list' %}" 
+                   class="block px-3 py-2.5 rounded-xl text-base font-medium transition border
+                   {% if request.resolver_match.url_name == 'photos_list' %}text-white bg-slate-900/80 border-slate-800/40{% else %}text-slate-400 hover:text-white hover:bg-slate-900/40 border-transparent{% endif %}">
+                    Photos
+                </a>
+                
+            </div>
+            
+            <div class="pt-4 border-t border-slate-900 px-2 pb-6">
+                {% if user.is_authenticated %}
+                    <div class="flex items-center space-x-3 mb-4 px-3">
+                        <div class="w-8 h-8 rounded-full bg-gradient-to-br from-indigo-500 to-cyan-500 flex items-center justify-center font-bold text-white">
+                            {{ user.username|slice:":1"|upper }}
+                        </div>
+                        <span class="text-sm font-medium text-slate-200">{{ user.username }}</span>
+                    </div>
+                    <a href="#" class="block px-3 py-2 text-sm text-slate-400 hover:text-white transition">Account Settings</a>
+                    <form method="POST" action="{% url 'logout' %}" class="mt-2">
+                        {% csrf_token %}
+                        <button type="submit" class="w-full text-left block px-3 py-2 text-sm text-rose-400 font-medium transition">Sign Out</button>
+                    </form>
+                {% else %}
+                    <div class="grid grid-cols-2 gap-3">
+                        <a href="{% url 'login' %}" class="w-full py-2.5 text-center text-sm font-semibold border border-slate-800 rounded-xl text-slate-300 hover:text-white transition">Sign In</a>
+                        <a href="{% url 'signup' %}" class="w-full py-2.5 text-center text-sm font-semibold bg-indigo-600 rounded-xl text-white transition">Get Started</a>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Dynamic Content Block -->
+    <main class="flex-grow pt-16 z-10 relative">
+        {% block content %}
+        <!-- Child templates render here -->
+        {% endblock %}
+    </main>
+
+    <!-- Footer -->
+    <footer class="w-full py-6 text-center text-xs text-slate-700 border-t border-slate-900/40 backdrop-blur-md z-10 relative">
+        <p>&copy; {% now "Y" %} Albumize. All rights reserved.</p>
+    </footer>
+
+    <!-- Premium UI Interactivity Scripts -->
+    <script>
+        const header = document.getElementById('mainHeader');
+        const profileDropdownBtn = document.getElementById('profileDropdownBtn');
+        const profileDropdownMenu = document.getElementById('profileDropdownMenu');
+        const dropdownArrow = document.getElementById('dropdownArrow');
+        const mobileMenuBtn = document.getElementById('mobileMenuBtn');
+        const mobileMenu = document.getElementById('mobileMenu');
+        const navLines = document.getElementById('navLines');
+
+        // Dynamic Header blur on window layout scroll
+        window.addEventListener('scroll', () => {
+            if (window.scrollY > 20) {
+                header.classList.remove('bg-slate-950/0', 'border-transparent');
+                header.classList.add('bg-slate-950/60', 'backdrop-blur-xl', 'border-slate-900/80');
+            } else {
+                header.classList.remove('bg-slate-950/60', 'backdrop-blur-xl', 'border-slate-900/80');
+                header.classList.add('bg-slate-950/0', 'border-transparent');
+            }
+        });
+
+        // Smart Desktop Dropdown Open/Close Animations
+        if (profileDropdownBtn && profileDropdownMenu) {
+            profileDropdownBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const isHidden = profileDropdownMenu.classList.contains('hidden');
+                
+                if (isHidden) {
+                    profileDropdownMenu.classList.remove('hidden');
+                    setTimeout(() => {
+                        profileDropdownMenu.classList.remove('opacity-0', 'scale-95');
+                        profileDropdownMenu.classList.add('opacity-100', 'scale-100');
+                        dropdownArrow.classList.add('rotate-180');
+                    }, 10);
+                } else {
+                    closeDropdown();
+                }
+            });
+
+            function closeDropdown() {
+                profileDropdownMenu.classList.remove('opacity-100', 'scale-100');
+                profileDropdownMenu.classList.add('opacity-0', 'scale-95');
+                dropdownArrow.classList.remove('rotate-180');
+                setTimeout(() => {
+                    profileDropdownMenu.classList.add('hidden');
+                }, 200);
+            }
+
+            // Click outside anywhere to dismiss open dropdown frames
+            document.addEventListener('click', (e) => {
+                if (!e.target.closest('.id-dropdown-container')) {
+                    if (!profileDropdownMenu.classList.contains('hidden')) closeDropdown();
+                }
+            });
+        }
+
+        // Hardware-Accelerated Mobile Menu Drawer Transitions & Morphing Cross Icon
+        if (mobileMenuBtn && mobileMenu) {
+            mobileMenuBtn.addEventListener('click', () => {
+                const isOpen = mobileMenu.classList.contains('max-h-screen');
+                
+                if (!isOpen) {
+                    mobileMenu.classList.remove('hidden');
+                    mobileMenu.classList.remove('max-h-0', 'opacity-0');
+                    mobileMenu.classList.add('max-h-screen', 'opacity-100');
+                    // Morph SVG icon line target data string to an "X" shape
+                    navLines.setAttribute('d', 'M6 18L18 6M6 6l12 12');
+                } else {
+                    mobileMenu.classList.remove('max-h-screen', 'opacity-100');
+                    mobileMenu.classList.add('max-h-0', 'opacity-0');
+                    // Morph structural target back into traditional Hamburger bars
+                    navLines.setAttribute('d', 'M4 6h16M4 12h16M4 18h16');
+                }
+            });
+        }
+    </script>
+</body>
+</html>

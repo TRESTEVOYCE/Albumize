@@ -1,0 +1,140 @@
+{% extends 'albumize/base.html' %}
+{% load static %}
+
+{% block title %}{{ album.title }} | Albumize{% endblock %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-12 pb-24 relative min-h-[calc(100vh-10rem)]">
+    
+    <!-- Top Context Navigation -->
+    <div class="mb-4">
+        <a href="{% url 'album_list' %}" class="inline-flex items-center text-xs font-semibold text-indigo-400 hover:text-indigo-300 tracking-wider uppercase transition-colors gap-1">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
+            </svg>
+            Back to Albums
+        </a>
+    </div>
+
+    <!-- Album Banner Panel -->
+    <div class="mb-12 flex flex-col md:flex-row md:items-end md:justify-between gap-6 border-b border-slate-900 pb-8">
+        <div class="flex flex-col sm:flex-row items-center sm:items-end gap-6 text-center sm:text-left">
+            
+            <!-- Album Cover Art Thumbnail -->
+            <div class="w-24 h-24 rounded-2xl overflow-hidden bg-slate-950 border border-slate-800 shadow-xl flex-shrink-0">
+                {% if album.cover_image %}
+                    <img src="{{ album.cover_image.url }}" alt="{{ album.title }}" class="w-full h-full object-cover">
+                {% else %}
+                    <div class="w-full h-full flex items-center justify-center text-slate-700">
+                        <svg class="w-10 h-10" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 9l10.5-3m0 0v15m0-15l-10.5 3m10.5-3V3.75m-10.5 6.375V19.5M3.75 19.5h16.5M12 4.5a3 3 0 1 1-6 0 3 3 0 0 1 6 0ZM18 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" />
+                        </svg>
+                    </div>
+                {% endif %}
+            </div>
+
+            <!-- Metadata Info -->
+            <div>
+                <h1 class="text-3xl font-extrabold tracking-tight text-white sm:text-4xl">
+                    {{ album.title }}
+                </h1>
+                <div class="mt-2 flex flex-wrap items-center justify-center sm:justify-start gap-x-4 gap-y-1 text-sm text-slate-400">
+                    <span class="flex items-center gap-1">👤 {{ album.artist.username }}</span>
+                    <span class="text-slate-700">•</span>
+                    <span>📅 {{ album.release_date|date:"M d, Y" }}</span>
+                    <span class="text-slate-700">•</span>
+                    <span class="text-indigo-400 font-medium">🖼️ {{ photos.count }} Photos</span>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Management Toolbar (Edit & Delete Operations) -->
+        <div class="flex items-center justify-center gap-3 self-center md:self-auto">
+            <!-- Edit Action Link -->
+            <a href="{% url 'album_update' album.id %}" 
+               class="inline-flex items-center space-x-2 px-4 py-2.5 bg-slate-900 hover:bg-slate-800 text-xs font-semibold text-slate-300 hover:text-white rounded-xl border border-slate-800 transition active:scale-[0.98]">
+                <svg class="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path>
+                </svg>
+                <span>Edit Info</span>
+            </a>
+
+            <!-- Delete Action Link -->
+            <a href="{% url 'album_delete' album.id %}" 
+               class="inline-flex items-center space-x-2 px-4 py-2.5 bg-red-950/30 hover:bg-red-900 text-xs font-semibold text-red-400 hover:text-white rounded-xl border border-red-900/40 hover:border-red-700 transition active:scale-[0.98]">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5  7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                </svg>
+                <span>Delete Album</span>
+            </a>
+        </div>
+    </div>
+
+    <!-- Inside Album Photos Display Container -->
+    {% if photos %}
+    <div class="columns-1 sm:columns-2 md:columns-3 lg:columns-4 gap-4 space-y-4 [column-fill:_balance] box-border">
+        {% for photo in photos %}
+        <div class="break-inside-avoid bg-slate-900/40 border border-slate-800/60 rounded-2xl overflow-hidden group hover:border-indigo-500/30 transition-all duration-300 hover:shadow-[0_0_30px_rgba(99,102,241,0.04)] backdrop-blur-sm relative flex flex-col">
+            
+            <!-- Graphic Element Frame -->
+            <div class="overflow-hidden bg-slate-950 aspect-auto relative">
+                <img src="{{ photo.image.url }}" 
+                     alt="{{ photo.caption|default:'Album Media' }}" 
+                     class="w-full h-auto object-cover transform scale-100 group-hover:scale-[1.01] transition-transform duration-500 ease-out" loading="lazy">
+                
+                <!-- 🛠️ CARD ACTIONS OVERLAY (Reveals beautifully on hover) -->
+                <div class="absolute inset-0 bg-slate-950/60 opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex flex-col justify-end p-4 gap-2">
+                    <div class="flex items-center gap-2">
+                        <!-- Remove from Album Form -->
+                        <form method="POST" action="{% url 'photo_album_update' pk=photo.pk %}" class="flex-1">
+                            {% csrf_token %}
+                            <!-- Passing an empty value sets photo.album = None -->
+                            <input type="hidden" name="album_id" value="">
+                            <button type="submit" class="w-full text-center py-1.5 px-2 bg-slate-900/90 hover:bg-slate-900 text-[11px] font-semibold text-slate-300 hover:text-white border border-slate-700/50 rounded-lg transition duration-150 cursor-pointer">
+                                Remove
+                            </button>
+                        </form>
+
+                        <!-- Complete Hard Delete Form -->
+                        <form method="POST" action="{% url 'photo_delete' pk=photo.pk %}" onsubmit="return confirm('Are you sure you want to permanently delete this image from your database?');">
+                            {% csrf_token %}
+                            <button type="submit" class="p-1.5 bg-rose-950/80 hover:bg-rose-900 text-rose-400 hover:text-rose-200 border border-rose-900/50 rounded-lg transition duration-150 cursor-pointer" title="Delete Image From Database">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-4v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                                </svg>
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Context Summary Footer Card Block -->
+            <div class="p-4 border-t border-slate-950 bg-slate-900/20 flex-grow flex flex-col justify-between">
+                <p class="text-xs font-medium text-slate-300 leading-relaxed line-clamp-3">
+                    {{ photo.caption|default:"Untitled Track Item" }}
+                </p>
+                <div class="text-[10px] text-slate-500 mt-2 text-right">
+                    {{ photo.uploaded_at|date:"M d, Y" }}
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+    {% else %}
+    <!-- Empty State Content Box -->
+    <div class="py-20 text-center border border-dashed border-slate-800 rounded-3xl bg-slate-900/10 backdrop-blur-sm max-w-sm mx-auto mt-12 px-6">
+        <div class="w-12 h-12 rounded-xl bg-slate-900 border border-slate-800 text-slate-500 flex items-center justify-center mx-auto mb-4">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+            </svg>
+        </div>
+        <h3 class="text-base font-semibold text-slate-200">This album has no pictures</h3>
+        <p class="text-xs text-slate-500 mt-1 mb-6">Head back over to your main gallery grid to connect images into this collection.</p>
+        <a href="{% url 'album_list' %}" class="inline-flex py-2 px-4 bg-indigo-600 hover:bg-indigo-500 text-xs font-semibold text-white rounded-xl transition shadow-lg shadow-indigo-600/10">
+            Go to Gallery
+        </a>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

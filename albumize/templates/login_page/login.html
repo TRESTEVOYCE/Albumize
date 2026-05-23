@@ -1,0 +1,121 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Sign In | Albumize{% endblock %}</title>
+
+    <!-- Tailwind CSS Framework CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-slate-950 text-slate-100 font-sans antialiased h-screen flex flex-col justify-between selection:bg-indigo-500 selection:text-white">
+
+    <!-- =========================================================================
+         1. MINIMAL HEADER / BRANDING
+         ========================================================================= -->
+    <header class="w-full bg-slate-950/50 backdrop-blur-md border-b border-slate-900/50 fixed top-0 left-0 z-50">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 h-16 flex items-center">
+            <a href="/" class="text-xl font-bold bg-gradient-to-r from-indigo-400 to-cyan-400 bg-clip-text text-transparent tracking-tight">
+                Albumize
+            </a>
+        </div>
+    </header>
+
+    <!-- =========================================================================
+         2. LOGIN INTERFACE CENTER CARD
+         ========================================================================= -->
+    <main class="flex-grow flex items-center justify-center relative overflow-hidden px-4 pt-16">
+        
+        <!-- Premium UI Ambient Radial Glows -->
+        <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] bg-indigo-500/10 rounded-full blur-[120px] pointer-events-none"></div>
+
+        <!-- Authentic Form Panel -->
+        <div class="w-full max-w-md bg-slate-900/40 border border-slate-900 backdrop-blur-xl p-8 sm:p-10 rounded-2xl shadow-2xl z-10 relative">
+            
+            <!-- Context Header Block -->
+            <div class="text-center mb-8">
+                <h1 class="text-2xl sm:text-3xl font-bold tracking-tight text-white mb-2">Welcome Back</h1>
+                <p class="text-sm text-slate-400">Sign in to manage your photos and albums.</p>
+            </div>
+
+            <!-- Django Target Execution Container Form -->
+            <form method="POST" action="{% url 'login' %}" class="space-y-6">
+                {% csrf_token %}
+
+                <!-- Global Form Level Non-Field Errors Error Output Block -->
+                {% if form.non_field_errors %}
+                    <div class="p-3.5 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-400 text-xs font-medium space-y-1">
+                        {% for error in form.non_field_errors %}
+                            <p>{{ error }}</p>
+                        {% endfor %}
+                    </div>
+                {% endif %}
+
+                <!-- A. Username Input Pipeline Group -->
+                <div class="space-y-2">
+                    <label for="{{ form.username.id_for_label }}" class="block text-xs font-semibold text-slate-400 uppercase tracking-wider">
+                        Username
+                    </label>
+                    <input type="text" 
+                           name="{{ form.username.html_name }}" 
+                           id="{{ form.username.id_for_label }}"
+                           maxlength="150"
+                           required
+                           class="w-full px-4 py-3 bg-slate-950 border border-slate-800 rounded-xl text-sm text-slate-100 placeholder-slate-600 focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 transition duration-200" 
+                           placeholder="Enter your username">
+                    
+                    {% if form.username.errors %}
+                        <p class="text-xs text-rose-400 mt-1 font-medium">{{ form.username.errors.0 }}</p>
+                    {% endif %}
+                </div>
+
+                <!-- B. Password Input Pipeline Group -->
+                <div class="space-y-2">
+                    <div class="flex items-center justify-between">
+                        <label for="{{ form.password.id_for_label }}" class="block text-xs font-semibold text-slate-400 uppercase tracking-wider">
+                            Password
+                        </label>
+                    </div>
+                    <input type="password" 
+                           name="{{ form.password.html_name }}" 
+                           id="{{ form.password.id_for_label }}"
+                           required
+                           class="w-full px-4 py-3 bg-slate-950 border border-slate-800 rounded-xl text-sm text-slate-100 placeholder-slate-600 focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 transition duration-200" 
+                           placeholder="••••••••">
+                    
+                    {% if form.password.errors %}
+                        <p class="text-xs text-rose-400 mt-1 font-medium">{{ form.password.errors.0 }}</p>
+                    {% endif %}
+                </div>
+
+                <!-- C. Action Submit Dispatcher Button -->
+                <button type="submit" class="w-full py-3 px-4 bg-indigo-600 hover:bg-indigo-500 active:bg-indigo-700 text-white font-semibold rounded-xl text-sm transition duration-200 shadow-xl shadow-indigo-600/10 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 focus:ring-offset-slate-950">
+                    Sign In
+                </button>
+            </form>
+
+            <!-- Anchor Registration Switch Footer Block Links -->
+            <div class="mt-8 pt-6 border-t border-slate-900 text-center">
+                <p class="text-xs text-slate-500">
+                    Don't have an account? 
+                    <a href="{% url 'signup' %}" class="text-indigo-400 hover:text-indigo-300 font-medium ml-1 transition"><u>Create an account</u></a>
+                </p>
+                <p class="text-xs text-slate-500">
+                    Return to homepage?
+                    <a href="{% url 'landing' %}" class="text-indigo-400 hover:text-indigo-300 font-medium ml-1 transition"><u>Click here</u></a>
+                </p>
+            </div>
+
+        </div>
+    </main>
+
+    <!-- =========================================================================
+         3. FOOTER
+         ========================================================================= -->
+    <footer class="w-full py-6 text-center text-xs text-slate-700 border-t border-slate-900/40">
+        <p>&copy; {% now "Y" %} Albumize. All rights reserved.</p>
+    </footer>
+
+</body>
+</html>

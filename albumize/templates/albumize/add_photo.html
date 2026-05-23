@@ -1,0 +1,178 @@
+{% extends 'albumize/base.html' %}
+
+{% block title %}Upload New Photo | Albumize{% endblock %}
+
+{% block content %}
+<div class="min-h-[calc(100vh-4rem)] flex items-center justify-center px-4 py-12 relative overflow-hidden">
+    
+    <!-- Deep Ambient Glow Accent behind Form -->
+    <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[450px] h-[450px] bg-gradient-to-tr from-indigo-500/10 to-cyan-500/10 rounded-full blur-[100px] pointer-events-none z-0"></div>
+
+    <!-- Form Glass Container Card -->
+    <div class="w-full max-w-lg bg-slate-900/40 border border-slate-800/80 backdrop-blur-xl rounded-2xl p-6 sm:p-8 shadow-2xl z-10 relative">
+        
+        <!-- Header Section -->
+        <div class="mb-8 text-center sm:text-left">
+            <h1 class="text-2xl font-bold text-slate-100 tracking-tight bg-gradient-to-r from-slate-100 to-slate-300 bg-clip-text text-transparent">
+                Upload a Photo
+            </h1>
+            <p class="text-sm text-slate-400 mt-1.5">Share a new memory to your collection.</p>
+        </div>
+
+        <!-- Main Photo Upload Form -->
+        <!-- Note: enctype="multipart/form-data" is strictly mandatory for file uploads to work! -->
+        <form method="POST" enctype="multipart/form-data" class="space-y-6">
+            {% csrf_token %}
+
+            <!-- Form Validation Global Error Banner -->
+            {% if form.non_field_errors %}
+                <div class="p-3 bg-rose-500/10 border border-rose-500/20 text-rose-400 text-sm font-medium rounded-xl">
+                    {% for error in form.non_field_errors %}
+                        <p>{{ error }}</p>
+                    {% endfor %}
+                </div>
+            {% endif %}
+
+            <!-- 1. Optional Album Selection Field -->
+            <div class="space-y-2">
+                <div class="flex items-center justify-between">
+                    <label for="{{ form.album.id_for_label }}" class="block text-sm font-semibold text-slate-300">
+                        Select Album
+                    </label>
+                    <span class="text-[11px] font-medium text-slate-500 tracking-wider uppercase">Optional</span>
+                </div>
+                <div class="relative">
+                    <select name="{{ form.album.name }}" 
+                            id="{{ form.album.id_for_label }}"
+                            class="w-full bg-slate-950/60 border border-slate-800 rounded-xl px-4 py-3 text-slate-200 text-sm font-medium focus:outline-none focus:border-indigo-500/80 focus:ring-2 focus:ring-indigo-500/20 transition appearance-none cursor-pointer">
+                        
+                        <!-- Added empty placeholder choice so it isn't forced -->
+                        <option value="" {% if not form.album.value %}selected{% endif %} class="bg-slate-950 text-slate-400">
+                            Leave Unassigned (No Album)
+                        </option>
+
+                        {% for choice in form.album.field.choices %}
+                            <!-- Filters out any default empty dashes provided by Django to keep the custom placeholder clean -->
+                            {% if choice.0 %}
+                                <option value="{{ choice.0 }}" {% if form.album.value == choice.0 %}selected{% endif %} class="bg-slate-950 text-slate-200">
+                                    {{ choice.1 }}
+                                </option>
+                            {% endif %}
+                        {% endfor %}
+                    </select>
+                    <!-- Custom Native Select Arrow Indicator Dropdown Icon -->
+                    <div class="absolute inset-y-0 right-0 flex items-center pr-4 pointer-events-none text-slate-500">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                    </div>
+                </div>
+                {% if form.album.errors %}
+                    <p class="text-xs font-medium text-rose-400 mt-1">{{ form.album.errors.0 }}</p>
+                {% endif %}
+            </div>
+
+            <!-- 2. Dynamic Drag & Drop File Upload Field -->
+            <div class="space-y-2">
+                <label class="block text-sm font-semibold text-slate-300">
+                    Choose Image File
+                </label>
+                
+                <div id="dropzone" class="relative group cursor-pointer border-2 border-dashed border-slate-800 hover:border-indigo-500/50 bg-slate-950/40 hover:bg-slate-950/70 rounded-2xl p-6 transition flex flex-col items-center justify-center text-center">
+                    
+                    <!-- Real Hidden File Input Target -->
+                    <input type="file" 
+                           name="{{ form.image.name }}" 
+                           id="{{ form.image.id_for_label }}" 
+                           accept="image/*"
+                           class="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-20" required />
+
+                    <!-- Visual Icon Placeholder state -->
+                    <div id="uploadIconContainer" class="p-3 bg-slate-900/80 rounded-xl border border-slate-800 text-slate-400 group-hover:text-indigo-400 group-hover:border-indigo-500/30 transition shadow-inner">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 002-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+                    </div>
+
+                    <!-- Informational Copy -->
+                    <div id="uploadTextContainer" class="mt-4 space-y-1 z-10 pointer-events-none">
+                        <p class="text-sm font-semibold text-slate-200">
+                            Click to upload <span class="text-indigo-400 group-hover:text-indigo-300 transition">or drag and drop</span>
+                        </p>
+                        <p class="text-xs text-slate-500">PNG, JPG, JPEG, or WEBP formats accepted</p>
+                    </div>
+
+                    <!-- Dynamic Real-time File Selected Notification Text View -->
+                    <div id="fileSelectedBadge" class="hidden flex-col items-center space-y-2 z-10 pointer-events-none">
+                        <span class="px-3 py-1 bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 text-xs font-semibold rounded-full shadow-sm tracking-wide">
+                            File Selected
+                        </span>
+                        <p id="fileName" class="text-sm font-medium text-slate-300 max-w-[250px] truncate"></p>
+                    </div>
+                </div>
+
+                {% if form.image.errors %}
+                    <p class="text-xs font-medium text-rose-400 mt-1">{{ form.image.errors.0 }}</p>
+                {% endif %}
+            </div>
+
+            <!-- 3. Caption Field -->
+            <div class="space-y-2">
+                <label for="{{ form.caption.id_for_label }}" class="block text-sm font-semibold text-slate-300">
+                    Caption
+                </label>
+                <textarea name="{{ form.caption.name }}" 
+                          id="{{ form.caption.id_for_label }}" 
+                          rows="3" 
+                          placeholder="Write a catchy story or descriptive note for this photo..."
+                          class="w-full bg-slate-950/60 border border-slate-800 rounded-xl px-4 py-3 text-slate-200 placeholder-slate-600 text-sm font-medium focus:outline-none focus:border-indigo-500/80 focus:ring-2 focus:ring-indigo-500/20 transition resize-none"></textarea>
+                {% if form.caption.errors %}
+                    <p class="text-xs font-medium text-rose-400 mt-1">{{ form.caption.errors.0 }}</p>
+                {% endif %}
+            </div>
+
+            <!-- Interactive Actions Panel Row -->
+            <div class="flex items-center justify-end space-x-3 pt-4 border-t border-slate-900">
+                <a href="{% url 'photos_list' %}" 
+                   class="px-4 py-2.5 rounded-xl text-sm font-semibold text-slate-400 hover:text-slate-200 hover:bg-slate-900 transition duration-150">
+                    Cancel
+                </a>
+                <form method="POST" action="{% url 'photos_list' %}">
+                    {% csrf_token %}
+                    <button type="submit" 
+                        class="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-500 active:scale-[0.98] text-white text-sm font-semibold rounded-xl transition duration-150 shadow-lg shadow-indigo-600/15">
+                        Upload Photo
+                    </button>
+                </form>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Simple Script Component to Swap Out UI Text states upon Selection -->
+<script>
+    const fileInput = document.getElementById("{{ form.image.id_for_label }}");
+    const dropzone = document.getElementById("dropzone");
+    const iconContainer = document.getElementById("uploadIconContainer");
+    const textContainer = document.getElementById("uploadTextContainer");
+    const badgeContainer = document.getElementById("fileSelectedBadge");
+    const fileNameDisplay = document.getElementById("fileName");
+
+    if (fileInput) {
+        fileInput.addEventListener("change", (e) => {
+            if (fileInput.files && fileInput.files.length > 0) {
+                const file = fileInput.files[0];
+                
+                // Hide default prompt indicators
+                iconContainer.classList.add("hidden");
+                textContainer.classList.add("hidden");
+                
+                // Expose Custom Success State
+                fileNameDisplay.textContent = file.name;
+                badgeContainer.classList.remove("hidden");
+                badgeContainer.classList.add("flex");
+                
+                // Toggle active glass border highlight styling state rule definitions
+                dropzone.classList.remove("border-slate-800");
+                dropzone.classList.add("border-indigo-500/40", "bg-indigo-950/10");
+            }
+        });
+    }
+</script>
+{% endblock %}
