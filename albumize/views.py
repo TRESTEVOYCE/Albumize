@@ -134,22 +134,26 @@ class AlbumUpdateView(LoginRequiredMixin, UserPassesTestMixin, UpdateView):
     def get_success_url(self):
         return reverse_lazy('album_detail', kwargs={'pk': self.object.pk})
     
-class PhotoListView(ListView):
+class PhotoListView(LoginRequiredMixin, UserPassesTestMixin, ListView):
     model = Photo
     template_name = 'albumize/photos_list.html' 
     context_object_name = 'photos'
     paginate_by = 12
 
+    def test_func(self):
+        return self.request.user.is_authenticated
+    
     def get_queryset(self):
-        # 🛠️ Allow admin to see every single photo uploaded to the platform
+       
         if self.request.user.is_superuser:
             return Photo.objects.all().order_by('-id')
-        return Photo.objects.all().order_by('-id') # Or filter by user if required later
-  
+        
+        else:
+            return Photo.objects.filter(posted_by=self.request.user).order_by('-id')
+
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         if self.request.user.is_authenticated:
-            # 🛠️ Admins can assign pictures to any existing album options dropdown
             if self.request.user.is_superuser:
                 context['user_albums'] = Album.objects.all()
             else:
@@ -188,9 +192,13 @@ class PhotoCreateView(LoginRequiredMixin, CreateView):
     success_url = reverse_lazy('home')
 
     def form_valid(self, form):
-        # Attach the current user instance before committing to database
         form.instance.posted_by = self.request.user
         return super().form_valid(form)
+
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        kwargs['user'] = self.request.user
+        return kwargs
     
 class PhotoDetailView(LoginRequiredMixin, DetailView):
     model = Photo
