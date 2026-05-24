@@ -14,6 +14,7 @@ from pathlib import Path
 import os
 import cloudinary
 import dj_database_url
+import dotenv
 
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -24,11 +25,11 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/6.0/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = os.getenv('SECRET_KEY')
+SECRET_KEY= "django-insecure-=jbk@s^)^$v%zqkhay@x-xms)zz_9e$l%q-04tm&w8j1_ygbi8"
 
 # SECURITY WARNING: don't run with debug turned on in production!
 
-DEBUG = os.getenv('DEBUG') == 'True'
+DEBUG = True
 ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS', '*').split(',')
 
 LOGIN_URL = 'login'
@@ -36,16 +37,16 @@ LOGIN_REDIRECT_URL = 'home'
 LOGOUT_REDIRECT_URL = 'login'
 
 cloudinary.config(
-    cloud_name=os.getenv('CloudinaryCLOUD_NAME'),
-    api_key=os.getenv('CloudinaryAPI_KEY'),
-    api_secret=os.getenv('CloudinaryAPI_SECRET'),
+    cloud_name=os.getenv('CLOUD_NAME'),
+    api_key=os.getenv('API_KEY'),
+    api_secret=os.getenv('API_SECRET'),
     secure=True
 )
 
 CLOUDINARY_STORAGE = {
-    'CLOUD_NAME': os.getenv('CloudinaryCLOUD_NAME'),
-    'API_KEY': os.getenv('CloudinaryAPI_KEY'),
-    'API_SECRET': os.getenv('CloudinaryAPI_SECRET'),
+    'CLOUD_NAME': os.getenv('CLOUD_NAME'),
+    'API_KEY': os.getenv('API_KEY'),
+    'API_SECRET': os.getenv('API_SECRET'),
 }
 
 
@@ -166,3 +167,6 @@ CSRF_TRUSTED_ORIGINS = [
 ]
 
 SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+
+
+dotenv.load_dotenv()

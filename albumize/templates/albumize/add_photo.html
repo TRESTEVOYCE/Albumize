@@ -20,16 +20,21 @@
         </div>
 
         <!-- Main Photo Upload Form -->
-        <!-- Note: enctype="multipart/form-data" is strictly mandatory for file uploads to work! -->
         <form method="POST" enctype="multipart/form-data" class="space-y-6">
             {% csrf_token %}
 
-            <!-- Form Validation Global Error Banner -->
-            {% if form.non_field_errors %}
-                <div class="p-3 bg-rose-500/10 border border-rose-500/20 text-rose-400 text-sm font-medium rounded-xl">
-                    {% for error in form.non_field_errors %}
-                        <p>{{ error }}</p>
-                    {% endfor %}
+            <!-- Diagnostic Backend Validation Error Debug Banner -->
+            {% if form.errors %}
+                <div class="p-4 bg-rose-500/10 border border-rose-500/20 text-rose-400 text-sm rounded-xl space-y-1 z-50 relative animate-in fade-in duration-200">
+                    <p class="font-bold flex items-center gap-1.5 text-rose-300">
+                        <svg class="w-4 h-4 text-rose-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
+                        Backend Validation Failed:
+                    </p>
+                    <div class="pl-5 space-y-1 text-xs text-slate-300">
+                        {% for field, errors in form.errors.items %}
+                            <p><span class="font-semibold text-rose-400 uppercase tracking-wide text-[10px] bg-rose-500/10 px-1.5 py-0.5 rounded border border-rose-500/20 mr-1">{{ field }}</span> {{ errors|striptags }}</p>
+                        {% endfor %}
+                    </div>
                 </div>
             {% endif %}
 
@@ -46,13 +51,11 @@
                             id="{{ form.album.id_for_label }}"
                             class="w-full bg-slate-950/60 border border-slate-800 rounded-xl px-4 py-3 text-slate-200 text-sm font-medium focus:outline-none focus:border-indigo-500/80 focus:ring-2 focus:ring-indigo-500/20 transition appearance-none cursor-pointer">
                         
-                        <!-- Added empty placeholder choice so it isn't forced -->
                         <option value="" {% if not form.album.value %}selected{% endif %} class="bg-slate-950 text-slate-400">
                             Leave Unassigned (No Album)
                         </option>
 
                         {% for choice in form.album.field.choices %}
-                            <!-- Filters out any default empty dashes provided by Django to keep the custom placeholder clean -->
                             {% if choice.0 %}
                                 <option value="{{ choice.0 }}" {% if form.album.value == choice.0 %}selected{% endif %} class="bg-slate-950 text-slate-200">
                                     {{ choice.1 }}
@@ -65,9 +68,6 @@
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
                     </div>
                 </div>
-                {% if form.album.errors %}
-                    <p class="text-xs font-medium text-rose-400 mt-1">{{ form.album.errors.0 }}</p>
-                {% endif %}
             </div>
 
             <!-- 2. Dynamic Drag & Drop File Upload Field -->
@@ -106,10 +106,6 @@
                         <p id="fileName" class="text-sm font-medium text-slate-300 max-w-[250px] truncate"></p>
                     </div>
                 </div>
-
-                {% if form.image.errors %}
-                    <p class="text-xs font-medium text-rose-400 mt-1">{{ form.image.errors.0 }}</p>
-                {% endif %}
             </div>
 
             <!-- 3. Caption Field -->
@@ -121,25 +117,19 @@
                           id="{{ form.caption.id_for_label }}" 
                           rows="3" 
                           placeholder="Write a catchy story or descriptive note for this photo..."
-                          class="w-full bg-slate-950/60 border border-slate-800 rounded-xl px-4 py-3 text-slate-200 placeholder-slate-600 text-sm font-medium focus:outline-none focus:border-indigo-500/80 focus:ring-2 focus:ring-indigo-500/20 transition resize-none"></textarea>
-                {% if form.caption.errors %}
-                    <p class="text-xs font-medium text-rose-400 mt-1">{{ form.caption.errors.0 }}</p>
-                {% endif %}
+                          class="w-full bg-slate-950/60 border border-slate-800 rounded-xl px-4 py-3 text-slate-200 placeholder-slate-600 text-sm font-medium focus:outline-none focus:border-indigo-500/80 focus:ring-2 focus:ring-indigo-500/20 transition resize-none">{% if form.caption.value %}{{ form.caption.value }}{% endif %}</textarea>
             </div>
 
             <!-- Interactive Actions Panel Row -->
             <div class="flex items-center justify-end space-x-3 pt-4 border-t border-slate-900">
-                <a href="{% url 'photos_list' %}" 
+                <a href="{% url 'home' %}" 
                    class="px-4 py-2.5 rounded-xl text-sm font-semibold text-slate-400 hover:text-slate-200 hover:bg-slate-900 transition duration-150">
                     Cancel
                 </a>
-                <form method="POST" action="{% url 'photos_list' %}">
-                    {% csrf_token %}
-                    <button type="submit" 
+                <button type="submit" 
                         class="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-500 active:scale-[0.98] text-white text-sm font-semibold rounded-xl transition duration-150 shadow-lg shadow-indigo-600/15">
-                        Upload Photo
-                    </button>
-                </form>
+                    Upload Photo
+                </button>
             </div>
         </form>
     </div>
@@ -154,23 +144,51 @@
     const badgeContainer = document.getElementById("fileSelectedBadge");
     const fileNameDisplay = document.getElementById("fileName");
 
-    if (fileInput) {
+    function displaySelectedFile(file) {
+        if (!file) return;
+        iconContainer.classList.add("hidden");
+        textContainer.classList.add("hidden");
+        
+        fileNameDisplay.textContent = file.name;
+        badgeContainer.classList.remove("hidden");
+        badgeContainer.classList.add("flex");
+        
+        dropzone.classList.remove("border-slate-800");
+        dropzone.classList.add("border-indigo-500/40", "bg-indigo-950/10");
+    }
+
+    if (fileInput && dropzone) {
+        // Handle traditional file browsing clicks
         fileInput.addEventListener("change", (e) => {
             if (fileInput.files && fileInput.files.length > 0) {
-                const file = fileInput.files[0];
-                
-                // Hide default prompt indicators
-                iconContainer.classList.add("hidden");
-                textContainer.classList.add("hidden");
-                
-                // Expose Custom Success State
-                fileNameDisplay.textContent = file.name;
-                badgeContainer.classList.remove("hidden");
-                badgeContainer.classList.add("flex");
-                
-                // Toggle active glass border highlight styling state rule definitions
-                dropzone.classList.remove("border-slate-800");
-                dropzone.classList.add("border-indigo-500/40", "bg-indigo-950/10");
+                displaySelectedFile(fileInput.files[0]);
+            }
+        });
+
+        // Intercept drag events to prevent the browser from loading/opening the raw file directly
+        ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+            dropzone.addEventListener(eventName, (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+            }, false);
+        });
+
+        // Active visual glowing drag-over indicators
+        ['dragenter', 'dragover'].forEach(eventName => {
+            dropzone.addEventListener(eventName, () => dropzone.classList.add('border-indigo-500/80', 'bg-slate-950/60'), false);
+        });
+        ['dragleave', 'drop'].forEach(eventName => {
+            dropzone.addEventListener(eventName, () => dropzone.classList.remove('border-indigo-500/80', 'bg-slate-950/60'), false);
+        });
+
+        // Capture files from drop interface and map explicitly to input component data stream
+        dropzone.addEventListener('drop', (e) => {
+            const dt = e.dataTransfer;
+            const files = dt.files;
+
+            if (files && files.length > 0) {
+                fileInput.files = files; 
+                displaySelectedFile(files[0]);
             }
         });
     }

@@ -1,6 +1,6 @@
 from django.shortcuts import redirect, render, get_object_or_404
 from django.views import View
-from albumize.forms import SignupForm
+from albumize.forms import SignupForm, PhotoForm
 from .models import Album, Photo
 from django.contrib.auth.models import User
 from django.views.generic import ListView, DetailView, CreateView, TemplateView, UpdateView
@@ -183,11 +183,12 @@ class PhotoAlbumUpdateView(LoginRequiredMixin, View):
 
 class PhotoCreateView(LoginRequiredMixin, CreateView):
     model = Photo
+    form_class = PhotoForm 
     template_name = 'albumize/add_photo.html'
-    fields = ['album', 'image', 'caption']
     success_url = reverse_lazy('home')
 
     def form_valid(self, form):
+        # Attach the current user instance before committing to database
         form.instance.posted_by = self.request.user
         return super().form_valid(form)
     
