@@ -3,8 +3,9 @@ from django.views import View
 from albumize.forms import SignupForm, PhotoForm
 from .models import Album, Photo
 from django.contrib.auth.models import User
-from django.views.generic import ListView, DetailView, CreateView, TemplateView, UpdateView
+from django.views.generic import DeleteView, ListView, DetailView, CreateView, TemplateView, UpdateView
 from django.urls import reverse_lazy
+from django.views.generic.edit import DeleteView
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.core.exceptions import PermissionDenied
 from django.contrib.auth.views import LoginView, LogoutView
@@ -205,15 +206,13 @@ class PhotoDetailView(LoginRequiredMixin, DetailView):
     template_name = 'albumize/photo_detail.html'
     context_object_name = 'photo'
 
-class PhotoDeleteView(LoginRequiredMixin, DetailView):
+class PhotoDeleteView(LoginRequiredMixin, DeleteView):
     model = Photo
-    template_name = 'albumize/photo_confirm_delete.html'
     context_object_name = 'photo'
     success_url = reverse_lazy('home')
 
     def get_object(self, queryset=None):
         photo = super().get_object(queryset)
-        # 🛠️ Administrative global drop access override
         if not self.request.user.is_superuser and photo.posted_by != self.request.user:
             raise PermissionDenied("You do not have permission to delete this photo.")
         return photo

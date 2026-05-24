@@ -85,18 +85,9 @@
                 <!-- 🛠️ CARD ACTIONS OVERLAY (Reveals beautifully on hover) -->
                 <div class="absolute inset-0 bg-slate-950/60 opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex flex-col justify-end p-4 gap-2">
                     <div class="flex items-center gap-2">
-                        <!-- Remove from Album Form -->
-                        <form method="POST" action="{% url 'photo_album_update' pk=photo.pk %}" class="flex-1">
-                            {% csrf_token %}
-                            <!-- Passing an empty value sets photo.album = None -->
-                            <input type="hidden" name="album_id" value="">
-                            <button type="submit" class="w-full text-center py-1.5 px-2 bg-slate-900/90 hover:bg-slate-900 text-[11px] font-semibold text-slate-300 hover:text-white border border-slate-700/50 rounded-lg transition duration-150 cursor-pointer">
-                                Remove
-                            </button>
-                        </form>
-
+                    
                         <!-- Complete Hard Delete Form -->
-                        <form method="POST" action="{% url 'photo_delete' pk=photo.pk %}" onsubmit="return confirm('Are you sure you want to permanently delete this image from your database?');">
+                        <form method="POST" action="{% url 'photo_delete' pk=photo.pk %}"">
                             {% csrf_token %}
                             <button type="submit" class="p-1.5 bg-rose-950/80 hover:bg-rose-900 text-rose-400 hover:text-rose-200 border border-rose-900/50 rounded-lg transition duration-150 cursor-pointer" title="Delete Image From Database">
                                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
